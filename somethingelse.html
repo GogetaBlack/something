@@ -1,0 +1,94 @@
+<!-- file: index.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zip File Viewer and Downloader</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+</head>
+<body>
+    <input type="file" id="zip-file-input" accept=".zip" />
+    <div id="zip-contents"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
+/* file: styles.css */
+
+body {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+}
+
+#zip-contents {
+    margin-top: 20px;
+}
+
+.file-entry {
+    padding: 5px;
+    border: 1px solid #ddd;
+    margin-bottom: 5px;
+    border-radius: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.download-button {
+    cursor: pointer;
+    padding: 5px 10px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+}
+// file: script.js
+
+document.getElementById('zip-file-input').addEventListener('change', handleFileSelect, false);
+
+function handleFileSelect(event) {
+    const file = event.target.files[0]; // Get the file input
+
+    if (file) {
+        const reader = new FileReader();
+
+        reader.onload = function(e) {
+            const content = e.target.result;
+            const zip = new JSZip();
+
+            // Read the zip file content
+            zip.loadAsync(content).then(function(zip) {
+                // Clear previous contents
+                const zipContents = document.getElementById('zip-contents');
+                zipContents.innerHTML = '';
+
+                // Loop through each file in the zip
+                zip.forEach(function(relativePath, zipEntry) {
+                    // Create a div for each entry
+                    const entryDiv = document.createElement('div');
+                    entryDiv.classList.add('file-entry');
+                    entryDiv.textContent = zipEntry.name;
+
+                    // Create a download button for each entry
+                    const downloadButton = document.createElement('button');
+                    downloadButton.classList.add('download-button');
+                    downloadButton.textContent = 'Download';
+                    downloadButton.onclick = function() {
+                        zipEntry.async('blob').then(function(blob) {
+                            saveAs(blob, zipEntry.name);
+                        });
+                    };
+
+                    entryDiv.appendChild(downloadButton);
+                    zipContents.appendChild(entryDiv);
+                });
+            });
+        };
+
+        reader.readAsArrayBuffer(file); // Read the file as ArrayBuffer for JSZip
+    }
+}
